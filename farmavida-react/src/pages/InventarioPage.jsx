@@ -13,15 +13,11 @@ export default function InventarioPage() {
 
   useEffect(() => { loadProductos(); }, [loadProductos]);
 
-  // ── BUG 5: La búsqueda en descripción es case-sensitive.
-  //    Debería usar: prod.descripcion.toLowerCase().includes(q)
-  //    Pero usa: prod.descripcion.includes(search)  → sin toLowerCase()
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
     return productos.filter(p => {
       const matchFilter = filter === 'all' || p.audiencia === filter;
-      // BUG 5: descripcion.includes(search) no convierte a minúsculas
-      const matchSearch = p.nombre.toLowerCase().includes(q) || p.descripcion.includes(search);
+      const matchSearch = p.nombre.toLowerCase().includes(q) || p.descripcion.toLowerCase().includes(q);
       return matchFilter && matchSearch;
     });
   }, [productos, search, filter]);
