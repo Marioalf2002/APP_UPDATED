@@ -76,6 +76,17 @@ function calcularEdad(fechaNacimiento) {
   return edad;
 }
 
+function normalizarNombreProducto(nombre) {
+  return (nombre || '').trim().toLowerCase();
+}
+
+function buscarProductoPorNombre(nombre, excluirId = null) {
+  const clave = normalizarNombreProducto(nombre);
+  return productos.find(
+    p => normalizarNombreProducto(p.nombre) === clave && p.id !== excluirId
+  );
+}
+
 function validarPassword(password) {
   const reglas = {
     longitud : password.length >= 8,
@@ -332,7 +343,16 @@ app.post('/productos', authMiddleware, requireRol('admin', 'farmaceutico'), (req
   if (typeof cantidad !== 'number' || cantidad < 0 || !Number.isInteger(cantidad)) return res.status(400).json({ error: 'La cantidad debe ser un número entero mayor o igual a 0.' });
   if (!['adultos','ninos'].includes(audiencia))     return res.status(400).json({ error: 'El campo audiencia debe ser "adultos" o "ninos".' });
 
-  const nuevo = { id: uuidv4(), nombre, descripcion, precio, cantidad, audiencia, creadoEn: new Date().toISOString() };
+  const nombreLimpio = nombre.trim();
+  const existente = buscarProductoPorNombre(nombreLimpio);
+  if (existente) {
+    return res.status(409).json({
+      error: `Ya existe un producto con el nombre "${existente.nombre}".`,
+      productoExistente: { id: existente.id, nombre: existente.nombre },
+    });
+  }
+
+  const nuevo = { id: uuidv4(), nombre: nombreLimpio, descripcion, precio, cantidad, audiencia, creadoEn: new Date().toISOString() };
   productos.push(nuevo);
   res.status(201).json({ mensaje: 'Producto creado exitosamente.', producto: { ...nuevo, precioFinal: precioFinal(nuevo) } });
 });
@@ -347,7 +367,19 @@ app.put('/productos/:id', authMiddleware, requireRol('admin', 'farmaceutico'), (
   if (cantidad !== undefined && (typeof cantidad !== 'number' || cantidad < 0 || !Number.isInteger(cantidad))) return res.status(400).json({ error: 'La cantidad debe ser un entero mayor o igual a 0.' });
   if (audiencia && !['adultos','ninos'].includes(audiencia)) return res.status(400).json({ error: 'audiencia debe ser "adultos" o "ninos".' });
 
-  productos[idx] = { ...productos[idx], ...(nombre && { nombre }), ...(descripcion && { descripcion }), ...(precio !== undefined && { precio }), ...(cantidad !== undefined && { cantidad }), ...(audiencia && { audiencia }) };
+  if (nombre) {
+    const nombreLimpio = nombre.trim();
+    const duplicado = buscarProductoPorNombre(nombreLimpio, req.params.id);
+    if (duplicado) {
+      return res.status(409).json({
+        error: `Ya existe un producto con el nombre "${duplicado.nombre}".`,
+        productoExistente: { id: duplicado.id, nombre: duplicado.nombre },
+      });
+    }
+    productos[idx] = { ...productos[idx], nombre: nombreLimpio };
+  }
+
+  productos[idx] = { ...productos[idx], ...(descripcion && { descripcion }), ...(precio !== undefined && { precio }), ...(cantidad !== undefined && { cantidad }), ...(audiencia && { audiencia }) };
   res.status(200).json({ mensaje: 'Producto actualizado exitosamente.', producto: { ...productos[idx], precioFinal: precioFinal(productos[idx]) } });
 });
 

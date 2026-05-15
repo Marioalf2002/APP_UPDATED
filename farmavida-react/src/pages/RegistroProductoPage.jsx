@@ -15,7 +15,8 @@ export default function RegistroProductoPage({ onNavigate }) {
   const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }));
 
   const handleSubmit = async () => {
-    const { nombre, descripcion, precio, cantidad, audiencia } = form;
+    const nombre = form.nombre.trim();
+    const { descripcion, precio, cantidad, audiencia } = form;
     if (!nombre || !descripcion || precio === '' || cantidad === '' || !audiencia) {
       showToast('Completa todos los campos.', 'error'); return;
     }
