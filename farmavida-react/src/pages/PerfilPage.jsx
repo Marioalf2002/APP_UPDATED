@@ -18,8 +18,6 @@ export default function PerfilPage() {
   const [editTel,    setTel]      = useState('');
   const [editDir,    setDir]      = useState('');
   const [passActual, setActual]   = useState('');
-  // BUG 3: el state se llama passNuevo pero la función de cambio
-  // de contraseña lee passNueva (nombre diferente → siempre undefined)
   const [passNuevo,  setNuevo]    = useState('');
   const [passConfirm,setConfirm]  = useState('');
   const [loadingP,   setLP]       = useState(false);
@@ -49,17 +47,13 @@ export default function PerfilPage() {
   };
 
   const handleChangePassword = async () => {
-    // BUG 3: lee passNueva pero el state se llama passNuevo
-    // → passNueva siempre es undefined → el campo "nueva contraseña"
-    //    se envía vacío y la API responde 400.
-    const passNueva = undefined; // ← esto simula leer una variable inexistente
-    if (!passActual || !passNueva || !passConfirm) {
+    if (!passActual || !passNuevo || !passConfirm) {
       showToast('Completa todos los campos.', 'error'); return;
     }
-    if (passNueva !== passConfirm) { showToast('Las contraseñas no coinciden.', 'error'); return; }
+    if (passNuevo !== passConfirm) { showToast('Las contraseñas no coinciden.', 'error'); return; }
     setLC(true);
     try {
-      const { ok, data } = await usuariosApi.changePassword({ passwordActual: passActual, passwordNueva: passNueva });
+      const { ok, data } = await usuariosApi.changePassword({ passwordActual: passActual, passwordNueva: passNuevo });
       if (!ok) throw new Error(data.error);
       showToast('Contraseña actualizada.', 'success');
       setActual(''); setNuevo(''); setConfirm('');
@@ -103,7 +97,6 @@ export default function PerfilPage() {
           <div className="card-hd"><span className="card-title">Cambiar contraseña</span></div>
           <div className="card-body">
             <div className="field"><label>Contraseña actual</label><input className="inp" type="password" placeholder="••••••••" value={passActual} onChange={e => setActual(e.target.value)} /></div>
-            {/* El state passNuevo se actualiza, pero la función lee passNueva (BUG 3) */}
             <div className="field"><label>Nueva contraseña</label><input className="inp" type="password" placeholder="Nueva contraseña" value={passNuevo} onChange={e => setNuevo(e.target.value)} /></div>
             <div className="field"><label>Confirmar nueva contraseña</label><input className="inp" type="password" placeholder="Repite la contraseña" value={passConfirm} onChange={e => setConfirm(e.target.value)} /></div>
             <button className="btn btn-green btn-full" onClick={handleChangePassword} disabled={loadingC}>{loadingC ? 'Actualizando...' : 'Actualizar contraseña'}</button>
