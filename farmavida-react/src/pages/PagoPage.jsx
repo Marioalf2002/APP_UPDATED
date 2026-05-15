@@ -93,10 +93,9 @@ export default function PagoPage({ onNavigate }) {
                 <label>Fecha de expiración (MM/AA)</label>
                 <input className="inp" placeholder="12/28" maxLength={5} value={cardExp} onChange={e => setCardExp(fmtExpiry(e.target.value))} />
               </div>
-              {/* BUG 2: maxLength es 2 en lugar de 4. No permite ingresar 3 dígitos. */}
               <div className="field">
                 <label>CVV</label>
-                <input className="inp" placeholder="123" maxLength={2} type="password" value={cardCvv} onChange={e => setCardCvv(e.target.value)} />
+                <input className="inp" placeholder="123" maxLength={4} type="password" value={cardCvv} onChange={e => setCardCvv(e.target.value)} />
               </div>
             </div>
 
