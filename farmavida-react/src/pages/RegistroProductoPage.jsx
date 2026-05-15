@@ -2,23 +2,33 @@
 //  src/pages/RegistroProductoPage.jsx
 // ═══════════════════════════════════════════════
 
-import { useState }     from 'react';
+import { useState, useEffect } from 'react';
 import { useProducts }  from '../hooks/useProducts';
 import { useToast }     from '../context/ToastContext';
 
+const normalizarNombre = (nombre) => (nombre || '').trim().toLowerCase();
+
 export default function RegistroProductoPage({ onNavigate }) {
-  const { createProducto } = useProducts();
+  const { createProducto, productos, loadProductos } = useProducts();
   const { showToast }      = useToast();
   const [form, setForm]    = useState({ nombre: '', descripcion: '', precio: '', cantidad: '', audiencia: '' });
   const [loading, setLoading] = useState(false);
 
   const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }));
 
+  useEffect(() => { loadProductos(); }, [loadProductos]);
+
   const handleSubmit = async () => {
     const nombre = form.nombre.trim();
     const { descripcion, precio, cantidad, audiencia } = form;
     if (!nombre || !descripcion || precio === '' || cantidad === '' || !audiencia) {
       showToast('Completa todos los campos.', 'error'); return;
+    }
+    const clave = normalizarNombre(nombre);
+    const duplicado = productos.find(p => normalizarNombre(p.nombre) === clave);
+    if (duplicado) {
+      showToast(`Ya existe un producto con el nombre "${duplicado.nombre}".`, 'error');
+      return;
     }
     const p = parseFloat(precio), c = parseInt(cantidad);
     if (isNaN(p) || p < 0) { showToast('El precio debe ser mayor o igual a 0.', 'error'); return; }
