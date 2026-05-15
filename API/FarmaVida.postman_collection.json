@@ -1,0 +1,615 @@
+{
+  "info": {
+    "name": "FarmaVida API",
+    "description": "Colección de pruebas para la API REST de FarmaVida. Incluye todos los endpoints organizados por módulo con casos de prueba positivos, negativos y de seguridad.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl",          "value": "http://localhost:3000" },
+    { "key": "tokenAdmin",       "value": "" },
+    { "key": "tokenFarmaceutico","value": "" },
+    { "key": "tokenCliente",     "value": "" },
+    { "key": "productoId",       "value": "p1" }
+  ],
+  "item": [
+
+    {
+      "name": "🏠 Estado de la API",
+      "item": [
+        {
+          "name": "GET / — Info de la API",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/", "host": ["{{baseUrl}}"], "path": [""] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "🔐 Auth — Registro y Login",
+      "item": [
+
+        {
+          "name": "✅ POST /auth/registro — Exitoso",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 201 Created', () => pm.response.to.have.status(201));",
+            "pm.test('Respuesta tiene token', () => pm.expect(pm.response.json()).to.have.property('token'));",
+            "pm.test('Rol es cliente', () => pm.expect(pm.response.json().usuario.rol).to.eql('cliente'));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Juan Prueba\",\n  \"email\": \"juanprueba@test.com\",\n  \"password\": \"Prueba123!\",\n  \"fechaNacimiento\": \"1995-06-15\",\n  \"telefono\": \"3001234567\",\n  \"direccion\": \"Calle 1 # 2-3\"\n}" },
+            "url": { "raw": "{{baseUrl}}/auth/registro", "host": ["{{baseUrl}}"], "path": ["auth","registro"] }
+          }
+        },
+
+        {
+          "name": "❌ POST /auth/registro — Menor de 18 años",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 400 Bad Request', () => pm.response.to.have.status(400));",
+            "pm.test('Mensaje indica edad insuficiente', () => pm.expect(pm.response.json().error).to.include('18'));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Niño Test\",\n  \"email\": \"nino@test.com\",\n  \"password\": \"Prueba123!\",\n  \"fechaNacimiento\": \"2015-01-01\"\n}" },
+            "url": { "raw": "{{baseUrl}}/auth/registro", "host": ["{{baseUrl}}"], "path": ["auth","registro"] }
+          }
+        },
+
+        {
+          "name": "❌ POST /auth/registro — Password sin mayúscula",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 400 Bad Request', () => pm.response.to.have.status(400));",
+            "pm.test('Error menciona requisitos de password', () => pm.expect(pm.response.json()).to.have.property('requisitos'));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Test User\",\n  \"email\": \"test2@test.com\",\n  \"password\": \"sinmayuscula1!\",\n  \"fechaNacimiento\": \"1990-01-01\"\n}" },
+            "url": { "raw": "{{baseUrl}}/auth/registro", "host": ["{{baseUrl}}"], "path": ["auth","registro"] }
+          }
+        },
+
+        {
+          "name": "❌ POST /auth/registro — Email duplicado",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 409 Conflict', () => pm.response.to.have.status(409));",
+            "pm.test('Mensaje indica email ya registrado', () => pm.expect(pm.response.json().error).to.include('registrado'));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Admin Duplicado\",\n  \"email\": \"admin@farmavida.com\",\n  \"password\": \"Admin123!\",\n  \"fechaNacimiento\": \"1985-05-10\"\n}" },
+            "url": { "raw": "{{baseUrl}}/auth/registro", "host": ["{{baseUrl}}"], "path": ["auth","registro"] }
+          }
+        },
+
+        {
+          "name": "❌ POST /auth/registro — Campos vacíos",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 400 Bad Request', () => pm.response.to.have.status(400));",
+            "pm.test('Respuesta indica campos faltantes', () => pm.expect(pm.response.json()).to.have.property('campos'));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{}" },
+            "url": { "raw": "{{baseUrl}}/auth/registro", "host": ["{{baseUrl}}"], "path": ["auth","registro"] }
+          }
+        },
+
+        {
+          "name": "✅ POST /auth/login — Admin (guarda token)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+            "pm.test('Respuesta tiene token', () => pm.expect(pm.response.json()).to.have.property('token'));",
+            "const token = pm.response.json().token;",
+            "pm.collectionVariables.set('tokenAdmin', token);",
+            "pm.test('Token guardado', () => pm.expect(token).to.be.a('string'));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"admin@farmavida.com\",\n  \"password\": \"Admin123!\"\n}" },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth","login"] }
+          }
+        },
+
+        {
+          "name": "✅ POST /auth/login — Farmacéutico (guarda token)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+            "pm.collectionVariables.set('tokenFarmaceutico', pm.response.json().token);"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"farmaceutico@farmavida.com\",\n  \"password\": \"Farma123!\"\n}" },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth","login"] }
+          }
+        },
+
+        {
+          "name": "✅ POST /auth/login — Cliente (guarda token)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+            "pm.collectionVariables.set('tokenCliente', pm.response.json().token);"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"cliente@farmavida.com\",\n  \"password\": \"Cliente123!\"\n}" },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth","login"] }
+          }
+        },
+
+        {
+          "name": "❌ POST /auth/login — Contraseña incorrecta",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 401 Unauthorized', () => pm.response.to.have.status(401));",
+            "pm.test('Mensaje de error presente', () => pm.expect(pm.response.json()).to.have.property('error'));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"admin@farmavida.com\",\n  \"password\": \"wrongpassword\"\n}" },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth","login"] }
+          }
+        },
+
+        {
+          "name": "❌ POST /auth/login — Email no registrado",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 401 Unauthorized', () => pm.response.to.have.status(401));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"noexiste@test.com\",\n  \"password\": \"Test123!\"\n}" },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth","login"] }
+          }
+        },
+
+        {
+          "name": "✅ POST /auth/recuperar-password",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+            "pm.test('Mensaje de respuesta presente', () => pm.expect(pm.response.json()).to.have.property('mensaje'));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"admin@farmavida.com\"\n}" },
+            "url": { "raw": "{{baseUrl}}/auth/recuperar-password", "host": ["{{baseUrl}}"], "path": ["auth","recuperar-password"] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "👤 Usuarios — Perfil",
+      "item": [
+
+        {
+          "name": "✅ GET /usuarios/perfil — Autenticado",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+            "pm.test('No expone password', () => pm.expect(pm.response.json().usuario).to.not.have.property('password'));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenCliente}}" }],
+            "url": { "raw": "{{baseUrl}}/usuarios/perfil", "host": ["{{baseUrl}}"], "path": ["usuarios","perfil"] }
+          }
+        },
+
+        {
+          "name": "🔒 GET /usuarios/perfil — Sin token",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 401 Unauthorized', () => pm.response.to.have.status(401));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/usuarios/perfil", "host": ["{{baseUrl}}"], "path": ["usuarios","perfil"] }
+          }
+        },
+
+        {
+          "name": "✅ PUT /usuarios/perfil — Actualizar",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+            "pm.test('Nombre actualizado', () => pm.expect(pm.response.json().usuario.nombre).to.eql('María Actualizada'));"
+          ]}}],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenCliente}}" },{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"María Actualizada\",\n  \"telefono\": \"3009999999\",\n  \"direccion\": \"Nueva Dirección 456\"\n}" },
+            "url": { "raw": "{{baseUrl}}/usuarios/perfil", "host": ["{{baseUrl}}"], "path": ["usuarios","perfil"] }
+          }
+        },
+
+        {
+          "name": "✅ PUT /usuarios/cambiar-password — Exitoso",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200 OK', () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenCliente}}" },{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"passwordActual\": \"Cliente123!\",\n  \"passwordNueva\": \"NuevaClave456@\"\n}" },
+            "url": { "raw": "{{baseUrl}}/usuarios/cambiar-password", "host": ["{{baseUrl}}"], "path": ["usuarios","cambiar-password"] }
+          }
+        },
+
+        {
+          "name": "❌ PUT /usuarios/cambiar-password — Password actual incorrecta",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 401 Unauthorized', () => pm.response.to.have.status(401));"
+          ]}}],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenCliente}}" },{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"passwordActual\": \"incorrecta\",\n  \"passwordNueva\": \"Nueva123!\"\n}" },
+            "url": { "raw": "{{baseUrl}}/usuarios/cambiar-password", "host": ["{{baseUrl}}"], "path": ["usuarios","cambiar-password"] }
+          }
+        },
+
+        {
+          "name": "🔒 GET /usuarios — Solo Admin ve todos",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+            "pm.test('Retorna lista de usuarios', () => pm.expect(pm.response.json()).to.have.property('usuarios'));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }],
+            "url": { "raw": "{{baseUrl}}/usuarios", "host": ["{{baseUrl}}"], "path": ["usuarios"] }
+          }
+        },
+
+        {
+          "name": "🔒 GET /usuarios — Cliente denegado (403)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 403 Forbidden', () => pm.response.to.have.status(403));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenCliente}}" }],
+            "url": { "raw": "{{baseUrl}}/usuarios", "host": ["{{baseUrl}}"], "path": ["usuarios"] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "💊 Productos — CRUD",
+      "item": [
+
+        {
+          "name": "✅ GET /productos — Lista completa",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+            "pm.test('Retorna array de productos', () => pm.expect(pm.response.json().productos).to.be.an('array'));",
+            "pm.test('Productos de niños tienen precioFinal con descuento', () => {",
+            "  const ninos = pm.response.json().productos.filter(p => p.audiencia === 'ninos');",
+            "  ninos.forEach(p => pm.expect(p.precioFinal).to.be.lessThan(p.precio));",
+            "});"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenCliente}}" }],
+            "url": { "raw": "{{baseUrl}}/productos", "host": ["{{baseUrl}}"], "path": ["productos"] }
+          }
+        },
+
+        {
+          "name": "✅ GET /productos?audiencia=ninos — Filtro",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+            "pm.test('Solo productos de niños', () => {",
+            "  pm.response.json().productos.forEach(p => pm.expect(p.audiencia).to.eql('ninos'));",
+            "});"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenCliente}}" }],
+            "url": { "raw": "{{baseUrl}}/productos?audiencia=ninos", "host": ["{{baseUrl}}"], "path": ["productos"], "query": [{ "key": "audiencia", "value": "ninos" }] }
+          }
+        },
+
+        {
+          "name": "❌ GET /productos — Sin token (401)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 401 Unauthorized', () => pm.response.to.have.status(401));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/productos", "host": ["{{baseUrl}}"], "path": ["productos"] }
+          }
+        },
+
+        {
+          "name": "✅ GET /productos/:id — Producto existente",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+            "pm.test('Tiene campo nombre', () => pm.expect(pm.response.json().producto).to.have.property('nombre'));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenCliente}}" }],
+            "url": { "raw": "{{baseUrl}}/productos/p1", "host": ["{{baseUrl}}"], "path": ["productos","p1"] }
+          }
+        },
+
+        {
+          "name": "❌ GET /productos/:id — ID inexistente (404)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 404 Not Found', () => pm.response.to.have.status(404));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenCliente}}" }],
+            "url": { "raw": "{{baseUrl}}/productos/p99999", "host": ["{{baseUrl}}"], "path": ["productos","p99999"] }
+          }
+        },
+
+        {
+          "name": "✅ POST /productos — Farmacéutico crea producto",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 201 Created', () => pm.response.to.have.status(201));",
+            "pm.test('Producto tiene ID', () => pm.expect(pm.response.json().producto).to.have.property('id'));",
+            "pm.collectionVariables.set('productoId', pm.response.json().producto.id);"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenFarmaceutico}}" },{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Vitamina D 1000UI\",\n  \"descripcion\": \"Suplemento vitamínico. Frasco 60 cápsulas.\",\n  \"precio\": 25000,\n  \"cantidad\": 50,\n  \"audiencia\": \"adultos\"\n}" },
+            "url": { "raw": "{{baseUrl}}/productos", "host": ["{{baseUrl}}"], "path": ["productos"] }
+          }
+        },
+
+        {
+          "name": "🔒 POST /productos — Cliente no puede crear (403)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 403 Forbidden', () => pm.response.to.have.status(403));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenCliente}}" },{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Producto Ilegal\",\n  \"descripcion\": \"Test\",\n  \"precio\": 1000,\n  \"cantidad\": 10,\n  \"audiencia\": \"adultos\"\n}" },
+            "url": { "raw": "{{baseUrl}}/productos", "host": ["{{baseUrl}}"], "path": ["productos"] }
+          }
+        },
+
+        {
+          "name": "❌ POST /productos — Precio negativo (400)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 400 Bad Request', () => pm.response.to.have.status(400));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenAdmin}}" },{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Test\",\n  \"descripcion\": \"Test\",\n  \"precio\": -500,\n  \"cantidad\": 10,\n  \"audiencia\": \"adultos\"\n}" },
+            "url": { "raw": "{{baseUrl}}/productos", "host": ["{{baseUrl}}"], "path": ["productos"] }
+          }
+        },
+
+        {
+          "name": "✅ PUT /productos/:id — Admin actualiza",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200 OK', () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenAdmin}}" },{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"cantidad\": 200,\n  \"precio\": 13000\n}" },
+            "url": { "raw": "{{baseUrl}}/productos/p1", "host": ["{{baseUrl}}"], "path": ["productos","p1"] }
+          }
+        },
+
+        {
+          "name": "🔒 DELETE /productos/:id — Solo Admin",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200 OK', () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }],
+            "url": { "raw": "{{baseUrl}}/productos/{{productoId}}", "host": ["{{baseUrl}}"], "path": ["productos","{{productoId}}"] }
+          }
+        },
+
+        {
+          "name": "🔒 DELETE /productos/:id — Farmacéutico denegado (403)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 403 Forbidden', () => pm.response.to.have.status(403));"
+          ]}}],
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenFarmaceutico}}" }],
+            "url": { "raw": "{{baseUrl}}/productos/p2", "host": ["{{baseUrl}}"], "path": ["productos","p2"] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "🛒 Carrito y Pagos",
+      "item": [
+
+        {
+          "name": "✅ POST /carrito/agregar — Agregar producto",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+            "pm.test('Mensaje de confirmación', () => pm.expect(pm.response.json()).to.have.property('mensaje'));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenCliente}}" },{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"productoId\": \"p1\",\n  \"cantidad\": 2\n}" },
+            "url": { "raw": "{{baseUrl}}/carrito/agregar", "host": ["{{baseUrl}}"], "path": ["carrito","agregar"] }
+          }
+        },
+
+        {
+          "name": "❌ POST /carrito/agregar — Producto sin stock",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 400 Bad Request', () => pm.response.to.have.status(400));",
+            "pm.test('Mensaje indica sin stock', () => pm.expect(pm.response.json().error).to.include('stock'));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenCliente}}" },{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"productoId\": \"p5\",\n  \"cantidad\": 1\n}" },
+            "url": { "raw": "{{baseUrl}}/carrito/agregar", "host": ["{{baseUrl}}"], "path": ["carrito","agregar"] }
+          }
+        },
+
+        {
+          "name": "✅ GET /carrito — Ver carrito",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+            "pm.test('Tiene campo total', () => pm.expect(pm.response.json()).to.have.property('total'));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenCliente}}" }],
+            "url": { "raw": "{{baseUrl}}/carrito", "host": ["{{baseUrl}}"], "path": ["carrito"] }
+          }
+        },
+
+        {
+          "name": "✅ PUT /carrito/actualizar — Cambiar cantidad",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200 OK', () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenCliente}}" },{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"productoId\": \"p1\",\n  \"cantidad\": 3\n}" },
+            "url": { "raw": "{{baseUrl}}/carrito/actualizar", "host": ["{{baseUrl}}"], "path": ["carrito","actualizar"] }
+          }
+        },
+
+        {
+          "name": "✅ POST /carrito/pago — Tarjeta aprobada sandbox",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+            "pm.test('Pedido creado con estado pagado', () => pm.expect(pm.response.json().pedido.estado).to.eql('pagado'));",
+            "pm.test('No expone número completo de tarjeta', () => pm.expect(pm.response.json().pedido.ultimosCuatroDigitos).to.have.lengthOf(4));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenCliente}}" },{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"numeroTarjeta\": \"4111 1111 1111 1111\",\n  \"nombreTitular\": \"María Cliente\",\n  \"fechaExpiracion\": \"12/28\",\n  \"cvv\": \"123\"\n}" },
+            "url": { "raw": "{{baseUrl}}/carrito/pago", "host": ["{{baseUrl}}"], "path": ["carrito","pago"] }
+          }
+        },
+
+        {
+          "name": "❌ POST /carrito/pago — Tarjeta rechazada sandbox",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 402 Payment Required', () => pm.response.to.have.status(402));",
+            "pm.test('Código CARD_DECLINED presente', () => pm.expect(pm.response.json().codigo).to.eql('CARD_DECLINED'));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenCliente}}" },{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"numeroTarjeta\": \"4000000000000002\",\n  \"nombreTitular\": \"María Cliente\",\n  \"fechaExpiracion\": \"12/28\",\n  \"cvv\": \"123\"\n}" },
+            "url": { "raw": "{{baseUrl}}/carrito/pago", "host": ["{{baseUrl}}"], "path": ["carrito","pago"] }
+          }
+        },
+
+        {
+          "name": "❌ POST /carrito/pago — Tarjeta vencida",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 400 Bad Request', () => pm.response.to.have.status(400));",
+            "pm.test('Error menciona fecha', () => pm.expect(pm.response.json().error).to.include('vencida'));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenCliente}}" },{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"numeroTarjeta\": \"4111 1111 1111 1111\",\n  \"nombreTitular\": \"María Cliente\",\n  \"fechaExpiracion\": \"01/20\",\n  \"cvv\": \"123\"\n}" },
+            "url": { "raw": "{{baseUrl}}/carrito/pago", "host": ["{{baseUrl}}"], "path": ["carrito","pago"] }
+          }
+        },
+
+        {
+          "name": "❌ POST /carrito/pago — Carrito vacío",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 400 Bad Request', () => pm.response.to.have.status(400));",
+            "pm.test('Error menciona carrito vacío', () => pm.expect(pm.response.json().error).to.include('vacío'));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenAdmin}}" },{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"numeroTarjeta\": \"4111 1111 1111 1111\",\n  \"nombreTitular\": \"Admin\",\n  \"fechaExpiracion\": \"12/28\",\n  \"cvv\": \"123\"\n}" },
+            "url": { "raw": "{{baseUrl}}/carrito/pago", "host": ["{{baseUrl}}"], "path": ["carrito","pago"] }
+          }
+        },
+
+        {
+          "name": "✅ DELETE /carrito/limpiar",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200 OK', () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenCliente}}" }],
+            "url": { "raw": "{{baseUrl}}/carrito/limpiar", "host": ["{{baseUrl}}"], "path": ["carrito","limpiar"] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "📦 Pedidos",
+      "item": [
+        {
+          "name": "✅ GET /pedidos — Mis pedidos",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+            "pm.test('Retorna lista de pedidos', () => pm.expect(pm.response.json()).to.have.property('pedidos'));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenCliente}}" }],
+            "url": { "raw": "{{baseUrl}}/pedidos", "host": ["{{baseUrl}}"], "path": ["pedidos"] }
+          }
+        },
+        {
+          "name": "✅ GET /pedidos — Admin ve todos",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200 OK', () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }],
+            "url": { "raw": "{{baseUrl}}/pedidos", "host": ["{{baseUrl}}"], "path": ["pedidos"] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "🔴 Rutas inexistentes",
+      "item": [
+        {
+          "name": "❌ GET /ruta-que-no-existe (404)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 404 Not Found', () => pm.response.to.have.status(404));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }],
+            "url": { "raw": "{{baseUrl}}/ruta-inexistente", "host": ["{{baseUrl}}"], "path": ["ruta-inexistente"] }
+          }
+        }
+      ]
+    }
+
+  ]
+}

@@ -1,0 +1,108 @@
+PARCIAL 2 – ANÁLISIS, DISEÑO, EJECUCIÓN DE CASOS DE PRUEBA Y
+
+REPORTE DE DEFECTOS FRONT AND BACK
+
+Equipo:
+
+Herramientas: Git, Mantis, Excel, Visual Studio Code, postman.
+Lenguajes: HTML, CSS, JS.
+Librería: React.
+Indicaciones:
+ Lea atentamente todo el parcial.
+ Se pueden realizar preguntas durante los primeros 5 minutos.
+ El parcial es en equipo.
+Objetivo del parcial
+Demostrar su capacidad para:
+ Diseñar y Ejecutar casos de prueba sobre la aplicación y API dadas.
+ Identificar y reportar bugs claros, reproducibles y bien documentados en Mantis.
+ Simular la interacción con un desarrollador (rol que deberá adoptar uno o dos
+integrantes del equipo)
+ Realizar el retest y cerrar el bug correctamente solo cuando esté resuelto.
+
+Desarrollo del parcial práctico:
+Asignar dos testers QA para probar la aplicación web desarrollada en React (frontend) que
+consume una API REST construida con Express (backend). Deberán:
+ Probar la aplicación desde la interfaz de usuario.
+ Probar la API directamente usando Postman.
+ Identificar bugs (tanto en frontend, backend como en la integración entre ambos).
+ Reportarlos en Mantis.
+ Simular la interacción con el desarrollador (docente o ayudante).
+ Realizar retest y cierre de bugs.
+
+Asignar dos desarrolladores que se encargarán de corregir los bugs reportados.
+
+Exploración y ejecución de pruebas
+Frontend (React):
+ Ejecutar casos de prueba
+ Probar manualmente validaciones, flujos, interacciones.
+Backend (API con Postman):
+ Importar colección de Postman (La API usa datos en memoria).
+ Probar cada endpoint:
+o Envío de datos válidos e inválidos.
+o Verificar códigos de estado HTTP.
+Método Acción CRUD equivalente Ejemplo
+GET Obtener datos Read (Leer) Obtener lista de
+
+tareas
+
+POST Crear un recurso Create (Crear) Registrar un nuevo
+
+usuario
+
+PUT Reemplazar
+
+completamente Update (Actualizar) Editar todos los
+datos de una tarea
+PATCH Modificar parcialmente Update (Actualizar) Cambiar solo el
+título de una tarea
+DELETE Eliminar un recurso Delete (Eliminar) Borrar una tarea
+
+o Verificar estructura de respuestas.
+
+Grupo Rango Significado
+
+1xx 100-199 Informativo (casi
+no se usan)
+2xx 200-299 Todo bien
+
+3xx 300-399
+
+Redirección (casi
+no se usan en APIs
+comunes)
+4xx 400-499 Error del cliente
+
+5xx 500-599 Error del servidor
+
+Reporte de bugs en Mantis
+Por cada bug encontrado, crear un issue.
+
+Corrección por el desarrollador
+El desarrollador tendrá que corregir los bugs encontrados. Posteriormente, deberá indicar
+que el bug está resuelto para que el tester realice retest del bug y finalmente lo cierre.
+
+Retest y cierre
+ Probar los bugs reportados en la nueva versión.
+ Si el bug ya no existe → cambia estado a cerrado en Mantis, agregando un
+comentario &quot;Retest OK&quot;.
+ Si el bug persiste o la corrección es parcial → reabre el bug con evidencia y explica
+por qué.
+
+Criterio Puntaje Descripción
+Detección de bugs 20 pts 4 bugs en front, 4 en back.
+Calidad del reporte en Mantis 25 pts Pasos claros, evidencia, severidad/prioridad bien
+asignadas, capa afectada identificada.
+
+Uso de Postman 15 pts Prueba endpoints correctamente, captura respuestas
+
+como evidencia.
+
+Diferenciación front/back 15 pts Identifica correctamente dónde está el bug.
+Ciclo retest-cierre 15 pts Verifica la corrección antes de cerrar, reabre si
+
+corresponde.
+
+Comunicación con
+desarrollador 10 pts Responde a observaciones, mejora reportes si fueron
+
+rechazados.
