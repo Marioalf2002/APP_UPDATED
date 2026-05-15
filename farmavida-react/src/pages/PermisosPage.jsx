@@ -55,11 +55,9 @@ export default function PermisosPage() {
 
   useEffect(() => { cargarUsuarios(); }, []);
 
-  // BUG 4: se usa 'clientes' (con 's') en lugar de 'cliente'
-  // → todos los permisos del rol Cliente aparecen como denegados (false)
   const adminPerms   = PERMISOS_MATRIX.map(p => ({ label: p.label, allowed: p.admin   }));
   const farmaPerms   = PERMISOS_MATRIX.map(p => ({ label: p.label, allowed: p.farma   }));
-  const clientePerms = PERMISOS_MATRIX.map(p => ({ label: p.label, allowed: p.clientes })); // BUG 4
+  const clientePerms = PERMISOS_MATRIX.map(p => ({ label: p.label, allowed: p.cliente }));
 
   return (
     <div>
